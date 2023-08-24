@@ -3,7 +3,7 @@ from actors import SkeletonArcher, SkeletonSpearman
 
 
 BACKGROUND_COLOR = pygame.Color('white')
-FRAMERATE = 10
+FRAMERATE = 20
 
 
 class ZombieLand:
@@ -15,7 +15,9 @@ class ZombieLand:
         self.screen = pygame.display.set_mode(window_size, self.flags)
 
         self.hero_group = pygame.sprite.Group()
-        self.skelly_archer = SkeletonArcher()
+        self.projectile_group = pygame.sprite.Group()
+
+        self.skelly_archer = SkeletonArcher(self.projectile_group)
         self.skelly_spearman = SkeletonSpearman((200, 0))
 
         self.hero_group.add(self.skelly_archer)
@@ -34,34 +36,30 @@ class ZombieLand:
 
     def _handle_keys_pressed(self, keys):
         if keys[pygame.K_SPACE] and keys[pygame.K_RIGHT]:
-            self.skelly_archer.right_walk()
-            self.skelly_archer.attack()
-
-            self.skelly_spearman.right_walk()
-            self.skelly_spearman.attack()
+            for hero in self.hero_group:
+                hero.right_walk()
+                hero.attack()
 
         elif keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
-            self.skelly_archer.left_walk()
-            self.skelly_archer.attack()
-
-            self.skelly_spearman.left_walk()
-            self.skelly_spearman.attack()
+            for hero in self.hero_group:
+                hero.left_walk()
+                hero.attack()
 
         elif keys[pygame.K_RIGHT]:
-            self.skelly_archer.right_walk()
-            self.skelly_spearman.right_walk()
+            for hero in self.hero_group:
+                hero.right_walk()
 
         if keys[pygame.K_LEFT]:
-            self.skelly_archer.left_walk()
-            self.skelly_spearman.left_walk()
+            for hero in self.hero_group:
+                hero.left_walk()
 
         elif keys[pygame.K_SPACE]:
-            self.skelly_archer.attack()
-            self.skelly_spearman.attack()
+            for hero in self.hero_group:
+                hero.attack()
 
         elif not any(keys):
-            self.skelly_archer.idle()
-            self.skelly_spearman.idle()
+            for hero in self.hero_group:
+                hero.idle()
 
     def _handle_input(self):
         for event in pygame.event.get():
@@ -71,12 +69,28 @@ class ZombieLand:
                 quit()
             self._handle_keys_pressed(pygame.key.get_pressed())
 
+    def _process_projectiles(self):
+        to_be_deleted = []
+
+        for proj in self.projectile_group:
+            if proj.position()[0] > (pygame.display.get_window_size()[0] + proj.rect.width):
+                to_be_deleted.append(proj)
+            proj.update()
+
+        if len(to_be_deleted) > 0:
+            for p in to_be_deleted:
+                print('Removing projectile.')
+                self.projectile_group.remove(p)
+
     def _process_game_logic(self):
         self.skelly_archer.update()
         self.skelly_spearman.update()
 
+        self._process_projectiles()
+
     def _draw(self):
         self.screen.fill(BACKGROUND_COLOR)
         self.hero_group.draw(self.screen)
+        self.projectile_group.draw(self.screen)
 
         pygame.display.flip()
