@@ -1,6 +1,5 @@
 import pygame
-import sprite_utils as su
-from sprite_utils import States, Direction
+from actors import Skeleton
 
 
 BACKGROUND_COLOR = pygame.Color('white')
@@ -18,7 +17,9 @@ class ZombieLand:
         # self.background = su.load_sprite("space", False)
 
         self.hero_group = pygame.sprite.Group()
-        self.skelly = su.SkeletonArcher(self.hero_group)
+        self.skelly = Skeleton('assets/sprites/archer')
+
+        self.hero_group.add(self.skelly)
 
     def main_loop(self):
         pygame.key.set_repeat(0, FRAMERATE)
@@ -40,20 +41,16 @@ class ZombieLand:
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 quit()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                self.skelly.update(state=States.WALK, direction=Direction.LEFT)
+                self.skelly.left_walk()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                self.skelly.update(state=States.WALK,
-                                   direction=Direction.RIGHT)
+                self.skelly.right_walk()
             elif event.type == pygame.KEYUP:
-                self.skelly.update(state=States.IDLE,
-                                   direction=self.skelly.direction)
+                self.skelly.idle()
 
     def _process_game_logic(self):
-        self.skelly.update(state=self.skelly.current_state,
-                           direction=self.skelly.direction)
+        self.skelly.update()
 
     def _draw(self):
-
         # self.screen.blit(self.background, (0, 0))
         self.screen.fill(BACKGROUND_COLOR)
         self.hero_group.draw(self.screen)
