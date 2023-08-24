@@ -155,7 +155,12 @@ class ActionActor(Actor):
         if self.index >= len(self.sprites[self.direction][self.state]):
             # we will make the index to 0 again
             self._cycle_ended(self.state)
-            self.index = 0
+
+            if self._is_in_uninterruptible_action():
+                self.index = 0
+                self.idle()
+            else:
+                self.index = 0
 
         self.image = self.sprites[self.direction][self.state][self.index]
         self._action()
@@ -164,13 +169,11 @@ class ActionActor(Actor):
         pass
 
     def _action(self):
-        if self.state == STATE_WALK and self.direction == DIRECTION_LEFT:
-            self.rect.x -= HERO_STEP
-        elif self.state == STATE_WALK and self.direction == DIRECTION_RIGHT:
-            self.rect.x += HERO_STEP
-        elif not self._is_in_uninterruptible_action():
-            # Change of state but we are still in attacking animation.
-            self.idle()
+        if not self._is_in_uninterruptible_action():
+            if self.state == STATE_WALK and self.direction == DIRECTION_LEFT:
+                self.rect.x -= HERO_STEP
+            elif self.state == STATE_WALK and self.direction == DIRECTION_RIGHT:
+                self.rect.x += HERO_STEP
 
         print(self.state, self.index)
 
@@ -214,6 +217,9 @@ class ActionActor(Actor):
             self.state = random.choice(self.attack_types())
             self.attacking = self.state
 
+    def low_attack(self):
+        self.attack()
+
     def idle(self):
         if not self._is_in_uninterruptible_action():
             self.state = STATE_IDLE
@@ -231,9 +237,21 @@ class SkeletonArcher(ActionActor):
     def attack_types(self):
         return (STATE_SHOT_1, STATE_SHOT_2)
 
+    def attack(self):
+        if not self._is_in_uninterruptible_action():
+            self.index = 0
+            self.state = STATE_SHOT_1
+            self.attacking = self.state
+
+    def low_attack(self):
+        if not self._is_in_uninterruptible_action():
+            self.index = 0
+            self.state = STATE_SHOT_2
+            self.attacking = self.state
+
     def _cycle_ended(self, current_state):
         if current_state in self.attack_types():
-            self._create_projectile(current_state)
+            self._create_projectile(current_state == STATE_SHOT_2)
 
     def _create_projectile(self, crouch):
         # We create the arrow
@@ -244,7 +262,7 @@ class SkeletonArcher(ActionActor):
             arrow.fire_right()
 
         correction_x = 28
-        correction_y = 7
+        correction_y = 5
 
         ax = 0
         ay = 0
@@ -252,17 +270,17 @@ class SkeletonArcher(ActionActor):
         if crouch:
             if arrow.direction == DIRECTION_LEFT:
                 ax = self.rect.x + correction_x
-                ay = self.rect.height/2 - correction_y
+                ay = self.rect.height/2 + self.rect.y + correction_y
             elif arrow.direction == DIRECTION_RIGHT:
                 ax = self.rect.x + self.rect.width/2 - correction_x
-                ay = self.rect.height/2 - correction_y
+                ay = self.rect.height/2 + self.rect.y + correction_y
         else:
             if arrow.direction == DIRECTION_LEFT:
                 ax = self.rect.x + correction_x
-                ay = self.rect.height/2 + correction_y
+                ay = self.rect.height/2 + self.rect.y - correction_y
             elif arrow.direction == DIRECTION_RIGHT:
                 ax = self.rect.x + self.rect.width/2 - correction_x
-                ay = self.rect.height/2 + correction_y
+                ay = self.rect.height/2 + self.rect.y - correction_y
 
         arrow.set_position(ax, ay)
         self.projectile_group.add(arrow)
@@ -283,3 +301,8 @@ class SkeletonSpearman(ActionActor):
 
     def left_jump(self):
         pass
+
+
+class MaleZombie(ActionActor):
+    def __init__(self, pos=(0, 0)) -> None:
+        super().__init__('assets/sprites/zombie_man')

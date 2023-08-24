@@ -3,11 +3,13 @@ from actors import SkeletonArcher, SkeletonSpearman
 
 
 BACKGROUND_COLOR = pygame.Color('white')
-FRAMERATE = 10
+FRAMERATE = 20
+WIDTH = 800
+HEIGHT = 600
 
 
 class ZombieLand:
-    def __init__(self, window_size=(800, 600)):
+    def __init__(self, window_size=(WIDTH, HEIGHT)):
         self._init_pygame()
         self.clock = pygame.time.Clock()
 
@@ -16,8 +18,12 @@ class ZombieLand:
 
         self.hero_group = pygame.sprite.Group()
         self.projectile_group = pygame.sprite.Group()
+        self.zombie_group = pygame.sprite.Group()
 
-        self.skelly_archer = SkeletonArcher(self.projectile_group)
+        self.background = pygame.transform.scale(pygame.image.load(
+            'assets/sprites/game_background.png'), (WIDTH, HEIGHT))
+
+        self.skelly_archer = SkeletonArcher(self.projectile_group, (0, 200))
         # self.skelly_spearman = SkeletonSpearman((200, 0))
 
         self.hero_group.add(self.skelly_archer)
@@ -39,35 +45,51 @@ class ZombieLand:
             for hero in self.hero_group:
                 hero.right_walk()
                 hero.attack()
+            return
 
-        elif keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
+        if keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
             for hero in self.hero_group:
                 hero.left_walk()
                 hero.attack()
+            return
 
-        elif keys[pygame.K_UP] and keys[pygame.K_LEFT]:
+        if keys[pygame.K_UP] and keys[pygame.K_LEFT]:
             for hero in self.hero_group:
                 hero.left_jump()
+            return
 
-        elif keys[pygame.K_UP] and keys[pygame.K_RIGHT]:
+        if keys[pygame.K_UP] and keys[pygame.K_RIGHT]:
             for hero in self.hero_group:
                 hero.right_jump()
+            return
 
-        elif keys[pygame.K_RIGHT]:
+        if keys[pygame.K_SPACE] and keys[pygame.K_DOWN]:
+            for hero in self.hero_group:
+                hero.low_attack()
+            return
+
+        if keys[pygame.K_SPACE] and keys[pygame.K_DOWN]:
+            for hero in self.hero_group:
+                hero.low_attack()
+            return
+
+        if keys[pygame.K_RIGHT]:
             for hero in self.hero_group:
                 hero.right_walk()
+            return
 
         if keys[pygame.K_LEFT]:
             for hero in self.hero_group:
                 hero.left_walk()
+            return
 
-        elif keys[pygame.K_SPACE]:
+        if keys[pygame.K_SPACE]:
             for hero in self.hero_group:
                 hero.attack()
+            return
 
-        elif not any(keys):
-            for hero in self.hero_group:
-                hero.idle()
+        for hero in self.hero_group:
+            hero.idle()
 
     def _handle_input(self):
         for event in pygame.event.get():
@@ -75,7 +97,11 @@ class ZombieLand:
                 quit()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 quit()
-            self._handle_keys_pressed(pygame.key.get_pressed())
+
+            keys_pressed = pygame.key.get_pressed()
+            print(any(keys_pressed))
+            self._handle_keys_pressed(keys_pressed)
+            print(event)
 
     def _process_projectiles(self):
         to_be_deleted = []
@@ -97,7 +123,7 @@ class ZombieLand:
         self._process_projectiles()
 
     def _draw(self):
-        self.screen.fill(BACKGROUND_COLOR)
+        self.screen.blit(self.background, self.background.get_rect())
         self.hero_group.draw(self.screen)
         self.projectile_group.draw(self.screen)
 
