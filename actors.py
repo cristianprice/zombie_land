@@ -172,6 +172,8 @@ class ActionActor(Actor):
             # Change of state but we are still in attacking animation.
             self.idle()
 
+        print(self.state, self.index)
+
     def _is_in_uninterruptible_action(self):
         return self._is_attacking() or self._is_jumping()
 
@@ -183,11 +185,13 @@ class ActionActor(Actor):
 
     def right_jump(self):
         if not self._is_in_uninterruptible_action():
+            self.index = 0
             self.state = STATE_EVASION
             self.direction = DIRECTION_RIGHT
 
     def left_jump(self):
         if not self._is_in_uninterruptible_action():
+            self.index = 0
             self.state = STATE_EVASION
             self.direction = DIRECTION_LEFT
 
@@ -206,6 +210,7 @@ class ActionActor(Actor):
 
     def attack(self):
         if not self._is_in_uninterruptible_action():
+            self.index = 0
             self.state = random.choice(self.attack_types())
             self.attacking = self.state
 

@@ -3,7 +3,7 @@ from actors import SkeletonArcher, SkeletonSpearman
 
 
 BACKGROUND_COLOR = pygame.Color('white')
-FRAMERATE = 20
+FRAMERATE = 10
 
 
 class ZombieLand:
@@ -18,10 +18,10 @@ class ZombieLand:
         self.projectile_group = pygame.sprite.Group()
 
         self.skelly_archer = SkeletonArcher(self.projectile_group)
-        self.skelly_spearman = SkeletonSpearman((200, 0))
+        # self.skelly_spearman = SkeletonSpearman((200, 0))
 
         self.hero_group.add(self.skelly_archer)
-        self.hero_group.add(self.skelly_spearman)
+        # self.hero_group.add(self.skelly_spearman)
 
     def main_loop(self):
         while True:
@@ -44,6 +44,14 @@ class ZombieLand:
             for hero in self.hero_group:
                 hero.left_walk()
                 hero.attack()
+
+        elif keys[pygame.K_UP] and keys[pygame.K_LEFT]:
+            for hero in self.hero_group:
+                hero.left_jump()
+
+        elif keys[pygame.K_UP] and keys[pygame.K_RIGHT]:
+            for hero in self.hero_group:
+                hero.right_jump()
 
         elif keys[pygame.K_RIGHT]:
             for hero in self.hero_group:
@@ -83,8 +91,8 @@ class ZombieLand:
                 self.projectile_group.remove(p)
 
     def _process_game_logic(self):
-        self.skelly_archer.update()
-        self.skelly_spearman.update()
+        for hero in self.hero_group:
+            hero.update()
 
         self._process_projectiles()
 
