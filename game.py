@@ -3,7 +3,7 @@ from actors import Skeleton
 
 
 BACKGROUND_COLOR = pygame.Color('white')
-FRAMERATE = 15
+FRAMERATE = 10
 
 
 class ZombieLand:
@@ -14,16 +14,12 @@ class ZombieLand:
         self.flags = pygame.SCALED  # | pygame.FULLSCREEN
         self.screen = pygame.display.set_mode(window_size, self.flags)
 
-        # self.background = su.load_sprite("space", False)
-
         self.hero_group = pygame.sprite.Group()
-        self.skelly = Skeleton('assets/sprites/archer')
+        self.skelly = Skeleton('assets/sprites/warrior')
 
         self.hero_group.add(self.skelly)
 
     def main_loop(self):
-        pygame.key.set_repeat(0, FRAMERATE)
-
         while True:
             self._handle_input()
             self._process_game_logic()
@@ -34,24 +30,36 @@ class ZombieLand:
         pygame.init()
         pygame.display.set_caption("ZombieLand")
 
+    def _handle_keys_pressed(self, keys):
+        if keys[pygame.K_SPACE] and keys[pygame.K_RIGHT]:
+            self.skelly.right_walk()
+            self.skelly.attack()
+        elif keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
+            self.skelly.left_walk()
+            self.skelly.attack()
+        elif keys[pygame.K_RIGHT]:
+            self.skelly.right_walk()
+        if keys[pygame.K_LEFT]:
+            self.skelly.left_walk()
+        elif keys[pygame.K_SPACE]:
+            self.skelly.attack()
+        elif not any(keys):
+            self.skelly.idle()
+
+        print(any(keys))
+
     def _handle_input(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 quit()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                self.skelly.left_walk()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                self.skelly.right_walk()
-            elif event.type == pygame.KEYUP:
-                self.skelly.idle()
+            self._handle_keys_pressed(pygame.key.get_pressed())
 
     def _process_game_logic(self):
         self.skelly.update()
 
     def _draw(self):
-        # self.screen.blit(self.background, (0, 0))
         self.screen.fill(BACKGROUND_COLOR)
         self.hero_group.draw(self.screen)
 

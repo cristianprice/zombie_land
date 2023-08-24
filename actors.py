@@ -1,12 +1,13 @@
+import os
+import random
 from functools import lru_cache
 from typing import Any
-import pygame
 
+import pygame
 from pygame import Surface
 from pygame.image import load
 from pygame.sprite import Sprite
-import os
-
+from time import time
 
 STEP = 5
 
@@ -15,6 +16,11 @@ DIRECTION_RIGHT = 'right'
 
 STATE_IDLE = 'idle'
 STATE_WALK = 'walk'
+STATE_ATTACK_1 = 'attack_1'
+STATE_ATTACK_2 = 'attack_2'
+STATE_ATTACK_3 = 'attack_3'
+
+random.seed(time())
 
 
 class SpriteSheet:
@@ -103,21 +109,36 @@ class Skeleton(Actor):
             # we will make the index to 0 again
             self.index = 0
         self.image = self.sprites[self.direction][self.state][self.index]
-        self._advance()
+        self._action()
 
-    def _advance(self):
+    def _action(self):
         if self.state == STATE_WALK and self.direction == DIRECTION_LEFT:
             self.rect.x -= STEP
         elif self.state == STATE_WALK and self.direction == DIRECTION_RIGHT:
             self.rect.x += STEP
+        elif not self._is_attacking():
+            # Change of state but we are still in attacking animation.
+            self.idle()
+
+    def _is_attacking(self):
+        return self.state in (STATE_ATTACK_1, STATE_ATTACK_2, STATE_ATTACK_3) and self.index != 0
 
     def left_walk(self):
-        self.state = STATE_WALK
-        self.direction = DIRECTION_LEFT
+        if not self._is_attacking():
+            self.state = STATE_WALK
+            self.direction = DIRECTION_LEFT
 
     def right_walk(self):
-        self.state = STATE_WALK
-        self.direction = DIRECTION_RIGHT
+        if not self._is_attacking():
+            self.state = STATE_WALK
+            self.direction = DIRECTION_RIGHT
+
+    def attack(self):
+        if not self._is_attacking():
+            self.state = random.choice(
+                (STATE_ATTACK_1, STATE_ATTACK_2, STATE_ATTACK_3))
+            self.attacking = self.state
 
     def idle(self):
-        self.state = STATE_IDLE
+        if not self._is_attacking():
+            self.state = STATE_IDLE
