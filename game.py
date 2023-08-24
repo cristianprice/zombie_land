@@ -1,5 +1,5 @@
 import pygame
-from actors import Skeleton
+from actors import SkeletonArcher, SkeletonSpearman
 
 
 BACKGROUND_COLOR = pygame.Color('white')
@@ -15,9 +15,11 @@ class ZombieLand:
         self.screen = pygame.display.set_mode(window_size, self.flags)
 
         self.hero_group = pygame.sprite.Group()
-        self.skelly = Skeleton('assets/sprites/warrior')
+        self.skelly_archer = SkeletonArcher()
+        self.skelly_spearman = SkeletonSpearman((200, 0))
 
-        self.hero_group.add(self.skelly)
+        self.hero_group.add(self.skelly_archer)
+        self.hero_group.add(self.skelly_spearman)
 
     def main_loop(self):
         while True:
@@ -28,25 +30,38 @@ class ZombieLand:
 
     def _init_pygame(self):
         pygame.init()
-        pygame.display.set_caption("ZombieLand")
+        pygame.display.set_caption("Zombie Land")
 
     def _handle_keys_pressed(self, keys):
         if keys[pygame.K_SPACE] and keys[pygame.K_RIGHT]:
-            self.skelly.right_walk()
-            self.skelly.attack()
-        elif keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
-            self.skelly.left_walk()
-            self.skelly.attack()
-        elif keys[pygame.K_RIGHT]:
-            self.skelly.right_walk()
-        if keys[pygame.K_LEFT]:
-            self.skelly.left_walk()
-        elif keys[pygame.K_SPACE]:
-            self.skelly.attack()
-        elif not any(keys):
-            self.skelly.idle()
+            self.skelly_archer.right_walk()
+            self.skelly_archer.attack()
 
-        print(any(keys))
+            self.skelly_spearman.right_walk()
+            self.skelly_spearman.attack()
+
+        elif keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
+            self.skelly_archer.left_walk()
+            self.skelly_archer.attack()
+
+            self.skelly_spearman.left_walk()
+            self.skelly_spearman.attack()
+
+        elif keys[pygame.K_RIGHT]:
+            self.skelly_archer.right_walk()
+            self.skelly_spearman.right_walk()
+
+        if keys[pygame.K_LEFT]:
+            self.skelly_archer.left_walk()
+            self.skelly_spearman.left_walk()
+
+        elif keys[pygame.K_SPACE]:
+            self.skelly_archer.attack()
+            self.skelly_spearman.attack()
+
+        elif not any(keys):
+            self.skelly_archer.idle()
+            self.skelly_spearman.idle()
 
     def _handle_input(self):
         for event in pygame.event.get():
@@ -57,7 +72,8 @@ class ZombieLand:
             self._handle_keys_pressed(pygame.key.get_pressed())
 
     def _process_game_logic(self):
-        self.skelly.update()
+        self.skelly_archer.update()
+        self.skelly_spearman.update()
 
     def _draw(self):
         self.screen.fill(BACKGROUND_COLOR)

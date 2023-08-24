@@ -20,6 +20,9 @@ STATE_ATTACK_1 = 'attack_1'
 STATE_ATTACK_2 = 'attack_2'
 STATE_ATTACK_3 = 'attack_3'
 
+STATE_SHOT_1 = 'shot_1'
+STATE_SHOT_2 = 'shot_2'
+
 random.seed(time())
 
 
@@ -142,3 +145,35 @@ class Skeleton(Actor):
     def idle(self):
         if not self._is_attacking():
             self.state = STATE_IDLE
+
+
+class SkeletonArcher(Skeleton):
+
+    def __init__(self, pos=(0, 0)) -> None:
+        super().__init__('assets/sprites/archer')
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+    def attack(self):
+        if not self._is_attacking():
+            self.state = random.choice((STATE_SHOT_1, STATE_SHOT_2))
+            self.attacking = self.state
+
+    def _is_attacking(self):
+        return self.state in (STATE_SHOT_1, STATE_SHOT_2) and self.index != 0
+
+
+class SkeletonSpearman(Skeleton):
+
+    def __init__(self, pos=(0, 0)) -> None:
+        super().__init__('assets/sprites/spearman')
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+    def attack(self):
+        if not self._is_attacking():
+            self.state = random.choice((STATE_ATTACK_1, STATE_ATTACK_2))
+            self.attacking = self.state
+
+    def _is_attacking(self):
+        return self.state in (STATE_ATTACK_1, STATE_ATTACK_2) and self.index != 0
