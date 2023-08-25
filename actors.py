@@ -1,13 +1,13 @@
 import os
 import random
 from functools import lru_cache
+from time import time
 from typing import Any
 
 import pygame
 from pygame import Surface
 from pygame.image import load
 from pygame.sprite import Sprite
-from time import time
 
 HERO_STEP = 5
 ARROW_SPEED = 50
@@ -21,6 +21,9 @@ STATE_ATTACK_1 = 'attack_1'
 STATE_ATTACK_2 = 'attack_2'
 STATE_ATTACK_3 = 'attack_3'
 STATE_EVASION = 'evasion'
+
+STATE_DEAD = 'dead'
+STATE_HURT = 'hurt'
 
 STATE_SHOT_1 = 'shot_1'
 STATE_SHOT_2 = 'shot_2'
@@ -113,6 +116,9 @@ class Arrow(StaticObject):
         self.direction = DIRECTION_RIGHT
         self.image = self.right_image
 
+    def it_hit(self, actor):
+        return self.rect.colliderect(actor.rect)
+
 
 class Actor(Sprite):
     def __init__(self, asset_dir, width, height) -> None:
@@ -140,14 +146,16 @@ class ActionActor(Actor):
     WIDTH = 128
     HEIGHT = 128
 
-    def __init__(self,  asset_dir) -> None:
-        super().__init__(asset_dir, self.WIDTH, self.HEIGHT)
+    def __init__(self,  asset_dir, width=WIDTH, height=HEIGHT) -> None:
+        super().__init__(asset_dir, width, height)
 
         self.index = 0
         self.state = STATE_IDLE
         self.direction = DIRECTION_RIGHT
         self.rect = pygame.Rect(0, 0, self.WIDTH, self.HEIGHT)
         self.image = self.sprites[self.direction][self.state][self.index]
+
+        self.frozen = False
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         self.index += 1
@@ -165,8 +173,17 @@ class ActionActor(Actor):
         self.image = self.sprites[self.direction][self.state][self.index]
         self._action()
 
+    def move(self, x, y):
+        self.rect.x += x
+        self.rect.y += y
+        return self
+
     def _cycle_ended(self, current_state):
         pass
+
+    def _freeze(self):
+        self.frozen = True
+        return self
 
     def _action(self):
         if not self._is_in_uninterruptible_action():
@@ -178,7 +195,7 @@ class ActionActor(Actor):
         print(self.state, self.index)
 
     def _is_in_uninterruptible_action(self):
-        return self._is_attacking() or self._is_jumping()
+        return self._is_attacking() or self._is_jumping() or self.frozen
 
     def _is_attacking(self):
         return self.state in self.attack_types() and self.index != 0
@@ -203,10 +220,14 @@ class ActionActor(Actor):
             self.state = STATE_WALK
             self.direction = DIRECTION_LEFT
 
+        return self
+
     def right_walk(self):
         if not self._is_in_uninterruptible_action():
             self.state = STATE_WALK
             self.direction = DIRECTION_RIGHT
+
+        return self
 
     def attack_types(self):
         return (STATE_ATTACK_1, STATE_ATTACK_2, STATE_ATTACK_3)
@@ -223,6 +244,8 @@ class ActionActor(Actor):
     def idle(self):
         if not self._is_in_uninterruptible_action():
             self.state = STATE_IDLE
+
+        return self
 
 
 class SkeletonArcher(ActionActor):
@@ -303,6 +326,46 @@ class SkeletonSpearman(ActionActor):
         pass
 
 
-class MaleZombie(ActionActor):
+class Zombie (ActionActor):
+    def __init__(self,  asset_dir, pos=(0, 0)) -> None:
+        super().__init__(asset_dir, 96, 96)
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+        self.hits = 0
+
+    def die(self):
+        if not self._is_in_uninterruptible_action():
+            self.index = 0
+            self.state = STATE_DEAD
+
+    def hit(self):
+        if not self._is_in_uninterruptible_action():
+            self.index = 0
+            self.state = STATE_HURT
+            self.hits += 1
+
+    def _stay_dead(self):
+        self.image = self.sprites[self.direction][STATE_DEAD][-1]
+        self._freeze()
+
+    def _cycle_ended(self, current_state):
+        if current_state == STATE_HURT:
+            if self.hits < 3:
+                self.idle()
+            else:
+                self.die()
+            return
+
+        if current_state == STATE_DEAD:
+            self._stay_dead()
+
+
+class MaleZombie(Zombie):
     def __init__(self, pos=(0, 0)) -> None:
-        super().__init__('assets/sprites/zombie_man')
+        super().__init__('assets/sprites/zombie_man', pos)
+
+
+class FemaleZombie(Zombie):
+    def __init__(self, pos=(0, 0)) -> None:
+        super().__init__('assets/sprites/zombie_woman', pos)

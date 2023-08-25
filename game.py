@@ -1,11 +1,11 @@
 import pygame
-from actors import SkeletonArcher, SkeletonSpearman
+from actors import SkeletonArcher, SkeletonSpearman, MaleZombie, FemaleZombie
 
 
 BACKGROUND_COLOR = pygame.Color('white')
 FRAMERATE = 20
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1024
+HEIGHT = 768
 
 
 class ZombieLand:
@@ -24,10 +24,15 @@ class ZombieLand:
             'assets/sprites/game_background.png'), (WIDTH, HEIGHT))
 
         self.skelly_archer = SkeletonArcher(self.projectile_group, (0, 200))
-        # self.skelly_spearman = SkeletonSpearman((200, 0))
+        # self.skelly_spearman = SkeletonSpearman((0, 200)).move(200, 0)
 
         self.hero_group.add(self.skelly_archer)
         # self.hero_group.add(self.skelly_spearman)
+
+        self.zombie_group.add(MaleZombie((800, 232)).left_walk().idle())
+        self.zombie_group.add(FemaleZombie((850, 232)).left_walk().idle())
+
+        self.groups = [self.hero_group, self.zombie_group]
 
     def main_loop(self):
         while True:
@@ -99,17 +104,27 @@ class ZombieLand:
                 quit()
 
             keys_pressed = pygame.key.get_pressed()
-            print(any(keys_pressed))
             self._handle_keys_pressed(keys_pressed)
             print(event)
+
+    def _projectile_collides_with_zombies(self, projectile):
+        for zombie in self.zombie_group:
+            if projectile.it_hit(zombie):
+                return zombie
+        return None
 
     def _process_projectiles(self):
         to_be_deleted = []
 
-        for proj in self.projectile_group:
-            if proj.position()[0] > (pygame.display.get_window_size()[0] + proj.rect.width):
-                to_be_deleted.append(proj)
-            proj.update()
+        for projectile in self.projectile_group:
+            if projectile.position()[0] > (pygame.display.get_window_size()[0] + projectile.rect.width):
+                to_be_deleted.append(projectile)
+            projectile.update()
+
+            zombie = self._projectile_collides_with_zombies(projectile)
+            if zombie is not None:
+                to_be_deleted.append(projectile)
+                zombie.hit()
 
         if len(to_be_deleted) > 0:
             for p in to_be_deleted:
@@ -117,14 +132,18 @@ class ZombieLand:
                 self.projectile_group.remove(p)
 
     def _process_game_logic(self):
-        for hero in self.hero_group:
-            hero.update()
+
+        for group in self.groups:
+            for actor in group:
+                actor.update()
 
         self._process_projectiles()
 
     def _draw(self):
         self.screen.blit(self.background, self.background.get_rect())
-        self.hero_group.draw(self.screen)
+        for g in self.groups:
+            g.draw(self.screen)
+
         self.projectile_group.draw(self.screen)
 
         pygame.display.flip()
