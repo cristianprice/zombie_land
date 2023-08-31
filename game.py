@@ -1,6 +1,11 @@
+import logging as log
+
 import pygame
-from actors import NewActor
-from game_constants import WIDTH, HEIGHT, FRAMERATE, HERO_STEP
+
+from actors import SkeletonHero
+from game_constants import FRAMERATE, HEIGHT, HERO_STEP, WIDTH
+
+log.basicConfig(level=log.DEBUG)
 
 
 class ZombieLand:
@@ -18,10 +23,10 @@ class ZombieLand:
         self.background = pygame.transform.scale(pygame.image.load(
             'assets/sprites/game_background.png'), (WIDTH, HEIGHT))
 
-        self.hero_group.add(
-            NewActor('assets/sprites/archer', 128, 128, (0, 200)))
+        self.hero_group.add(SkeletonHero(self.projectile_group))
 
-        self.groups = [self.hero_group, self.zombie_group]
+        self.groups = [self.hero_group,
+                       self.zombie_group, self.projectile_group]
 
     def main_loop(self):
         while True:
@@ -37,11 +42,17 @@ class ZombieLand:
     def _handle_keys_pressed(self, keys):
         right = keys[pygame.K_RIGHT]
         left = keys[pygame.K_LEFT]
+        shoot = keys[pygame.K_SPACE]
 
         for hero in self.hero_group:
-            if right:
+            if shoot:
+                log.debug(f'Shoot: {shoot}')
+                hero.shoot()
+            elif right:
+                log.debug(f'Right: {right}')
                 hero.move_right()
             elif left:
+                log.debug(f'Left: {left}')
                 hero.move_left()
             else:
                 hero.idle()

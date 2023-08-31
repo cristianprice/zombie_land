@@ -43,7 +43,7 @@ def _get_sprites(file_name, width, height, mirrored=False):
     return sprites
 
 
-def _revert_sprites(sprites_collection):
+def revert_sprites(sprites_collection):
     return [pygame.transform.flip(
             img, True, False) for img in sprites_collection]
 
