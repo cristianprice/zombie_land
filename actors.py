@@ -94,12 +94,40 @@ class NewActor(Actor):
             return
 
         self.image = self.state_sequence.next()
-        
+
+    def _same_action_not_done(self, state):
+        return self.state == state and not self.state_sequence.done()
+
     def idle(self):
-         self.state = STATE_IDLE
-         self.state_sequence = self.sequences[self.direction][self.state].reset()
+        if not self._same_action_not_done(STATE_IDLE):
+            self.state = STATE_IDLE
+            self.state_sequence = self.sequences[self.direction][self.state].reset(
+            )
+
+    def move_right(self):
+        direction = DIRECTION_RIGHT
+        step = HERO_STEP
+        return self._move(direction, step)
+
+    def move_left(self):
+        direction = DIRECTION_LEFT
+        step = -HERO_STEP
+        return self._move(direction, step)
+
+    def _move(self, direction, step):
+        if not self.state_sequence.interruptible():
+            return
+        if self.direction == direction and self._same_action_not_done(STATE_WALK):
+            self.move(step, 0)
+            return
+        else:
+            self.direction = direction
+            self.state = STATE_WALK
+            self.state_sequence = self.sequences[self.direction][self.state].reset(
+            )
+            self.move(step, 0)
+            return
 
     def move(self, x, y):
-        self.rect.x += x
-        self.rect.y += y
+        self.rect.move_ip(x, y)
         return self
