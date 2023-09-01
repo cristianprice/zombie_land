@@ -237,7 +237,7 @@ class Zombie(ActionActor):
                 [direction for _ in range(0, random.randint(10, 50))])
 
     def is_dead(self):
-        return self.hits > 2
+        return self.hits > 1
 
     def _can_interrupt(self):
         log.debug(
