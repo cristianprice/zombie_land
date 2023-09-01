@@ -88,9 +88,10 @@ class Actor(Sprite):
 
 
 class NewActor(Actor):
-    def __init__(self, asset_dir, width, height, pos=(0, 0)) -> None:
+    def __init__(self, asset_dir, width, height, pos=(0, 0), step=HERO_STEP) -> None:
         super().__init__(asset_dir, width, height)
 
+        self.step = step
         self.state = STATE_IDLE
         self.direction = DIRECTION_RIGHT
         self.rect = pygame.Rect(pos[0], pos[1], width, height)
@@ -140,27 +141,25 @@ class NewActor(Actor):
             return
 
         direction = DIRECTION_RIGHT
-        step = HERO_STEP
         self.state = STATE_WALK
         self.state_sequence = self.sequences[self.direction][self.state]
-        return self._move(direction, step)
+        return self._move(direction, self.step)
 
     def move_left(self):
         if not self._can_interrupt():
             return
 
         direction = DIRECTION_LEFT
-        step = -HERO_STEP
         self.state = STATE_WALK
         self.state_sequence = self.sequences[self.direction][self.state]
-        return self._move(direction, step)
+        return self._move(direction, -self.step)
 
     def _move(self, direction, step):
         log.debug(f'Direction {direction}, X: {self.rect.x + step}')
 
         if self.direction != direction:
             log.debug(
-                f'Direction changed. Old:{self.direction}, New: {direction}')
+                f'{self.__class__.__name__} Direction changed. Old:{self.direction}, New: {direction}')
             self.state = STATE_WALK
             self.direction = direction
             self.state_sequence.reset()
@@ -176,7 +175,8 @@ class NewActor(Actor):
 
 class SkeletonHero(NewActor):
     def __init__(self, projectile_group) -> None:
-        super().__init__('assets/sprites/archer', 128, 128, (0, 200))
+        super().__init__('assets/sprites/archer',
+                         HERO_SIZE_W, HERO_SIZE_H, (0, HERO_Y_POSITION))
         self._projectile_group = projectile_group
 
     def _create_arrow(self):
@@ -201,3 +201,17 @@ class SkeletonHero(NewActor):
         if self.state in (STATE_SHOT_1, STATE_SHOT_2):
             arrow = self._create_arrow()
             self._projectile_group.add(arrow)
+
+
+ZOMBIE_DIRS = ('assets/sprites/wild_zombie',
+               'assets/sprites/zombie_man', 'assets/sprites/zombie_woman')
+
+
+class Zombie(NewActor):
+    INDEX = 0
+
+    def __init__(self) -> None:
+        super().__init__(ZOMBIE_DIRS[Zombie.INDEX % len(ZOMBIE_DIRS)],
+                         ZOMBIE_SIZE_W, ZOMBIE_SIZE_H, (random.randint(400, 500),
+                                                        HERO_Y_POSITION + (HERO_SIZE_H-ZOMBIE_SIZE_H)), 1)
+        Zombie.INDEX += 1

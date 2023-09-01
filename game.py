@@ -1,9 +1,10 @@
 import logging as log
+import random
 
 import pygame
 
-from actors import SkeletonHero
-from game_constants import FRAMERATE, HEIGHT, HERO_STEP, WIDTH
+from actors import SkeletonHero, Zombie
+from game_constants import FRAMERATE, HEIGHT, WIDTH
 
 log.basicConfig(level=log.DEBUG)
 
@@ -18,7 +19,10 @@ class ZombieLand:
 
         self.hero_group = pygame.sprite.Group()
         self.projectile_group = pygame.sprite.Group()
+
         self.zombie_group = pygame.sprite.Group()
+        for _ in range(0, 10):
+            self.zombie_group.add(Zombie())
 
         self.background = pygame.transform.scale(pygame.image.load(
             'assets/sprites/game_background.png'), (WIDTH, HEIGHT))
@@ -70,6 +74,10 @@ class ZombieLand:
     def _process_game_logic(self):
         for group in self.groups:
             for actor in group:
+                if isinstance(actor, Zombie):
+                    action = random.choice([actor.move_left])
+                    action()
+
                 actor.update()
 
     def _draw(self):
