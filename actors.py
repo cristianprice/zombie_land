@@ -3,6 +3,7 @@ import os
 import random
 from time import time
 from typing import Any
+from collections import deque
 
 import pygame
 from pygame import Surface
@@ -80,14 +81,15 @@ class Actor(Sprite):
         self.sequences[DIRECTION_RIGHT] = dict()
 
         for img in images:
-            can_be_interrupted = ('attack' not in img) and ('shot' not in img)
+            can_be_interrupted = ('attack' not in img) and (
+                'shot' not in img) and ('hurt' not in img) and ('dead' not in img)
             self.sequences[DIRECTION_RIGHT][get_name_from_file(img)] = SpriteSequence(
                 f'{asset_dir}/{img}', width, height, can_be_interrupted)
             self.sequences[DIRECTION_LEFT][get_name_from_file(img)] = SpriteSequence(
                 f'{asset_dir}/{img}', width, height, can_be_interrupted, True)
 
 
-class NewActor(Actor):
+class ActionActor(Actor):
     def __init__(self, asset_dir, width, height, pos=(0, 0), step=HERO_STEP) -> None:
         super().__init__(asset_dir, width, height)
 
@@ -96,6 +98,7 @@ class NewActor(Actor):
         self.direction = DIRECTION_RIGHT
         self.rect = pygame.Rect(pos[0], pos[1], width, height)
         self.state_sequence = self.sequences[self.direction][self.state]
+        self.hits = 0
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         if self.state_sequence.done():
@@ -173,7 +176,7 @@ class NewActor(Actor):
         return self
 
 
-class SkeletonHero(NewActor):
+class SkeletonHero(ActionActor):
     def __init__(self, projectile_group) -> None:
         super().__init__('assets/sprites/archer',
                          HERO_SIZE_W, HERO_SIZE_H, (0, HERO_Y_POSITION))
@@ -204,14 +207,65 @@ class SkeletonHero(NewActor):
 
 
 ZOMBIE_DIRS = ('assets/sprites/wild_zombie',
-               'assets/sprites/zombie_man', 'assets/sprites/zombie_woman')
+               'assets/sprites/zombie_man',
+               'assets/sprites/zombie_woman')
 
 
-class Zombie(NewActor):
+class Zombie(ActionActor):
     INDEX = 0
 
-    def __init__(self) -> None:
+    def __init__(self, hero_group, step) -> None:
         super().__init__(ZOMBIE_DIRS[Zombie.INDEX % len(ZOMBIE_DIRS)],
                          ZOMBIE_SIZE_W, ZOMBIE_SIZE_H, (random.randint(400, 500),
-                                                        HERO_Y_POSITION + (HERO_SIZE_H-ZOMBIE_SIZE_H)), 1)
+                                                        HERO_Y_POSITION + (HERO_SIZE_H-ZOMBIE_SIZE_H)), step)
         Zombie.INDEX += 1
+        self.hero_group = hero_group
+        self.actions = []
+        self.direction = random.choice([DIRECTION_LEFT, DIRECTION_RIGHT])
+
+    def _patrol_10_steps(self):
+        if len(self.actions) > 0:
+            direction = self.actions.pop()
+            if direction == DIRECTION_LEFT:
+                self.move_left()
+            else:
+                self.move_right()
+        else:
+            # populate actions.
+            direction = DIRECTION_LEFT if self.direction == DIRECTION_RIGHT else DIRECTION_RIGHT
+            self.actions.extend(
+                [direction for _ in range(0, random.randint(10, 50))])
+
+    def is_dead(self):
+        return self.hits > 2
+
+    def _can_interrupt(self):
+        log.debug(
+            f'Can interrupt: {super()._can_interrupt()} is dead: {self.is_dead()}')
+        return super()._can_interrupt() and not self.is_dead()
+
+    def _action_done(self):
+        return super()._action_done()
+
+    def _die(self):
+        self.state = STATE_DEAD
+        self.state_sequence = self.sequences[self.direction][self.state]
+        self.state_sequence.reset()
+
+    def hit(self):
+        if not self._can_interrupt():
+            return
+
+        self.hits += 1
+        if self.is_dead():
+            return self._die()
+
+        self.state = STATE_HURT
+        self.state_sequence = self.sequences[self.direction][self.state]
+
+        if self.state == STATE_HURT and self.state_sequence.done():
+            self.state_sequence.reset()
+
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        self._patrol_10_steps()
+        return super().update(*args, **kwargs)
